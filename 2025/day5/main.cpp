@@ -23,12 +23,10 @@ struct Mark {
 };
 
 bool InRange(std::vector<Mark>& aRanges, uint64_t aNumber, size_t aIndex) {
-  std::cout << aRanges[aIndex].mValue << " " << aNumber;
   if (aNumber < aRanges[aIndex].mValue) {
     return false;
   }
   if (aIndex + 1 < aRanges.size()) {
-    std::cout << " " << aRanges[aIndex + 1].mValue << std::endl;
     if (aNumber > aRanges[aIndex + 1].mValue) {
       return false;
     }
@@ -40,12 +38,13 @@ int main() {
   auto ans1 = 0;
 
   // 158025699 too low
-  auto ans2 = 0;
+  // 158025699 too low
+  auto ans2 = uint64_t{};
 
   auto inputFile = std::ifstream{"input.txt"};
   auto line = std::string{};
   auto ranges = std::vector<Mark>{};
-  
+
 
   for (; std::getline(inputFile, line) && !line.empty(); ) {
     auto const delimiter = std::string{"-"};
@@ -68,9 +67,28 @@ int main() {
     }
     return a.mValue < b.mValue;
   });
+
   for (auto const& mark : ranges) {
     auto stuff = mark.mEnd == End::Open ? "Open" : "Close";
     std::cout << mark.mValue << " " << stuff << std::endl;
+  }
+
+  {
+    auto stack = std::stack<uint64_t>{};
+    for (auto const& mark : ranges) {
+      if (mark.mEnd == End::Open) {
+        stack.push(mark.mValue);
+      } else if (mark.mEnd == End::Close) {
+        if (stack.size() == 1) {
+          auto const& rangeBegin = stack.top();
+          auto const& rangeEnd = mark.mValue;
+          auto const valuesInRange = rangeEnd - rangeBegin + 1;
+          ans2 += valuesInRange;
+          // std::cout << rangeBegin << "-" << rangeEnd <<
+        }
+        stack.pop();
+      }
+    }
   }
 
   {
@@ -88,7 +106,6 @@ int main() {
         stack.pop();
         if (stack.size() == 0) {
           if (lastValid != mark.mValue) {
-            ans2 += mark.mValue - open + 1;
             lastValid = mark.mValue;
           }
           open = 0;
@@ -98,24 +115,20 @@ int main() {
   }
 
   while (std::getline(inputFile, line)) {
-    std::cout << "number: " << line << std::endl;
     auto const number = std::stoull(line);
     auto stack = std::stack<bool>{};
     for (auto i = size_t{}; i < ranges.size(); ++i) {
       if (ranges[i].mEnd == End::Open) {
-        std::cout << "push " << stack.size() << std::endl;
         stack.push(true);
       }
 
       if (ranges[i].mEnd == End::Close) {
-        std::cout << "pop " << stack.size() << std::endl;
         stack.pop();
       }
 
       // First and onlytime number is in range
       if (InRange(ranges, number, i)) {
         if (stack.size() > 0) {
-          std::cout << number << " is in" << std::endl;
           ++ans1;
         }
         break;
